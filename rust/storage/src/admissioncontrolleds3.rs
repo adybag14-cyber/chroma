@@ -13,6 +13,7 @@ use chroma_config::Configurable;
 use chroma_error::ChromaError;
 use chroma_tracing::util::Stopwatch;
 use futures::{stream, FutureExt, StreamExt, TryStreamExt};
+use object_store::ObjectStoreExt;
 use opentelemetry::{global, metrics::Counter, KeyValue};
 use std::any::Any;
 use std::fmt::Debug;

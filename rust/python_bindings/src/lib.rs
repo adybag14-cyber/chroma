@@ -9,7 +9,8 @@ use pyo3::prelude::*;
 //////////////////////// Config Imports ////////////////////////
 use chroma_sqlite::config::{MigrationHash, MigrationMode, SqliteDBConfig};
 
-#[pymodule]
+// Preserve the existing GIL requirement when using PyO3's newer module defaults.
+#[pymodule(gil_used = true)]
 fn chromadb_rust_bindings(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Bindings>()?;
 

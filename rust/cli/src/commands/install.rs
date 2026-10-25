@@ -18,7 +18,7 @@ use std::fs::{create_dir_all, read_to_string, File};
 use std::io::Write;
 use std::path::Path;
 use thiserror::Error;
-use zip_extract::extract;
+use zip::{read::root_dir_common_filter, ZipArchive};
 
 #[derive(Debug, Error)]
 pub enum InstallError {
@@ -327,7 +327,7 @@ fn extract_zip_file(
     let file = File::open(zip_path)?;
 
     // Pass the file (which implements Read) to extract.
-    extract(file, output_dir, true)?;
+    ZipArchive::new(file)?.extract_unwrapped_root_dir(output_dir, root_dir_common_filter)?;
     Ok(())
 }
 

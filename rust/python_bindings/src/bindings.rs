@@ -60,7 +60,7 @@ pub fn cli(py: Python<'_>, py_args: Option<Vec<String>>) -> ChromaPyResult<()> {
     } else {
         args
     };
-    py.allow_threads(|| chroma_cli(args));
+    py.detach(|| chroma_cli(args));
     Ok(())
 }
 
@@ -673,7 +673,7 @@ impl Bindings {
         )?;
 
         let mut frontend_clone = self.frontend.clone();
-        let result = py.allow_threads(move || {
+        let result = py.detach(move || {
             self.runtime
                 .block_on(async { Box::pin(frontend_clone.get(request)).await })
         })?;
@@ -721,7 +721,7 @@ impl Bindings {
         )?;
 
         let mut frontend_clone = self.frontend.clone();
-        let response = py.allow_threads(move || {
+        let response = py.detach(move || {
             self.runtime
                 .block_on(async { frontend_clone.query(request).await })
         })?;

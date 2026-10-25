@@ -286,11 +286,13 @@ impl<'py> pyo3::IntoPyObject<'py> for SparseVector {
 }
 
 #[cfg(feature = "pyo3")]
-impl<'py> pyo3::FromPyObject<'py> for SparseVector {
-    fn extract_bound(ob: &pyo3::Bound<'py, pyo3::PyAny>) -> pyo3::PyResult<Self> {
+impl<'py> pyo3::FromPyObject<'_, 'py> for SparseVector {
+    type Error = pyo3::PyErr;
+
+    fn extract(ob: pyo3::Borrowed<'_, 'py, pyo3::PyAny>) -> pyo3::PyResult<Self> {
         use pyo3::types::PyDict;
 
-        let dict = ob.downcast::<PyDict>()?;
+        let dict = ob.cast::<PyDict>()?;
         let indices_obj = dict.get_item("indices")?;
         if indices_obj.is_none() {
             return Err(pyo3::exceptions::PyKeyError::new_err(
@@ -354,8 +356,10 @@ pub enum UpdateMetadataValue {
 }
 
 #[cfg(feature = "pyo3")]
-impl<'py> pyo3::FromPyObject<'py> for UpdateMetadataValue {
-    fn extract_bound(ob: &pyo3::Bound<'py, pyo3::PyAny>) -> pyo3::PyResult<Self> {
+impl<'py> pyo3::FromPyObject<'_, 'py> for UpdateMetadataValue {
+    type Error = pyo3::PyErr;
+
+    fn extract(ob: pyo3::Borrowed<'_, 'py, pyo3::PyAny>) -> pyo3::PyResult<Self> {
         use pyo3::types::PyList;
 
         if ob.is_none() {
@@ -370,7 +374,7 @@ impl<'py> pyo3::FromPyObject<'py> for UpdateMetadataValue {
             Ok(UpdateMetadataValue::Str(value))
         } else if let Ok(value) = ob.extract::<SparseVector>() {
             Ok(UpdateMetadataValue::SparseVector(value))
-        } else if let Ok(list) = ob.downcast::<PyList>() {
+        } else if let Ok(list) = ob.cast::<PyList>() {
             // Empty lists are not allowed
             if list.is_empty()? {
                 return Err(pyo3::exceptions::PyValueError::new_err(
@@ -646,8 +650,10 @@ pub enum MetadataValue {
 }
 
 #[cfg(feature = "pyo3")]
-impl<'py> pyo3::FromPyObject<'py> for MetadataValue {
-    fn extract_bound(ob: &pyo3::Bound<'py, pyo3::PyAny>) -> pyo3::PyResult<Self> {
+impl<'py> pyo3::FromPyObject<'_, 'py> for MetadataValue {
+    type Error = pyo3::PyErr;
+
+    fn extract(ob: pyo3::Borrowed<'_, 'py, pyo3::PyAny>) -> pyo3::PyResult<Self> {
         use pyo3::types::PyList;
 
         if let Ok(value) = ob.extract::<bool>() {
@@ -660,7 +666,7 @@ impl<'py> pyo3::FromPyObject<'py> for MetadataValue {
             Ok(MetadataValue::Str(value))
         } else if let Ok(value) = ob.extract::<SparseVector>() {
             Ok(MetadataValue::SparseVector(value))
-        } else if let Ok(list) = ob.downcast::<PyList>() {
+        } else if let Ok(list) = ob.cast::<PyList>() {
             // Empty lists are not allowed
             if list.is_empty()? {
                 return Err(pyo3::exceptions::PyValueError::new_err(
@@ -2943,7 +2949,7 @@ mod tests {
     fn test_sparse_vector_pyo3_roundtrip_with_tokens() {
         ensure_python_interpreter();
 
-        pyo3::Python::with_gil(|py| {
+        pyo3::Python::attach(|py| {
             use pyo3::types::PyDict;
             use pyo3::IntoPyObject;
 
@@ -2969,7 +2975,7 @@ mod tests {
             );
 
             let py_obj = sparse.clone().into_pyobject(py).unwrap();
-            let dict_out = py_obj.downcast::<PyDict>().unwrap();
+            let dict_out = py_obj.cast::<PyDict>().unwrap();
             let tokens_obj = dict_out.get_item("tokens").unwrap();
             let tokens: Vec<String> = tokens_obj
                 .expect("expected tokens key in Python dict")
@@ -2987,7 +2993,7 @@ mod tests {
     fn test_sparse_vector_pyo3_roundtrip_without_tokens() {
         ensure_python_interpreter();
 
-        pyo3::Python::with_gil(|py| {
+        pyo3::Python::attach(|py| {
             use pyo3::types::PyDict;
             use pyo3::IntoPyObject;
 
@@ -3001,7 +3007,7 @@ mod tests {
             assert!(sparse.tokens.is_none());
 
             let py_obj = sparse.into_pyobject(py).unwrap();
-            let dict_out = py_obj.downcast::<PyDict>().unwrap();
+            let dict_out = py_obj.cast::<PyDict>().unwrap();
             let tokens_obj = dict_out.get_item("tokens").unwrap();
             let tokens_value = tokens_obj.expect("expected tokens key in Python dict");
             assert!(

@@ -18,7 +18,7 @@ use object_store::{
         HttpService, ReqwestConnector,
     },
     gcp::GoogleCloudStorageBuilder,
-    ClientOptions, GetRange, HeaderValue, ObjectMeta, ObjectStore, UpdateVersion,
+    ClientOptions, GetRange, HeaderValue, ObjectMeta, ObjectStore, ObjectStoreExt, UpdateVersion,
 };
 use serde::{Deserialize, Serialize};
 
