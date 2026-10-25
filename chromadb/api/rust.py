@@ -288,7 +288,13 @@ class RustBindingsAPI(ServerAPI):
         tenant: str = DEFAULT_TENANT,
         database: str = DEFAULT_DATABASE,
     ) -> CollectionModel:
-        collection = self.bindings.get_collection_by_id(str(collection_id), tenant, database)
+        collection = self.bindings.get_collection_by_id(
+            str(collection_id), tenant, database
+        )
+        if collection.tenant != tenant or collection.database != database:
+            from chromadb.errors import NotFoundError
+
+            raise NotFoundError(f"Collection {collection_id} does not exist.")
         return CollectionModel(
             id=collection.id,
             name=collection.name,
@@ -333,6 +339,7 @@ class RustBindingsAPI(ServerAPI):
         tenant: str = DEFAULT_TENANT,
         database: str = DEFAULT_DATABASE,
     ) -> None:
+        self.get_collection_by_id(id, tenant, database)
         if new_configuration:
             new_configuration_json_str = update_collection_configuration_to_json_str(
                 new_configuration
@@ -362,9 +369,7 @@ class RustBindingsAPI(ServerAPI):
         tenant: str = DEFAULT_TENANT,
         database: str = DEFAULT_DATABASE,
     ) -> int:
-        raise NotImplementedError(
-            "Fork count is not implemented for Local Chroma"
-        )
+        raise NotImplementedError("Fork count is not implemented for Local Chroma")
 
     @override
     def _get_indexing_status(
@@ -394,6 +399,7 @@ class RustBindingsAPI(ServerAPI):
         database: str = DEFAULT_DATABASE,
         read_level: ReadLevel = ReadLevel.INDEX_AND_WAL,
     ) -> int:
+        self.get_collection_by_id(collection_id, tenant, database)
         return self.bindings.count(str(collection_id), tenant, database)
 
     @override
@@ -425,6 +431,7 @@ class RustBindingsAPI(ServerAPI):
         tenant: str = DEFAULT_TENANT,
         database: str = DEFAULT_DATABASE,
     ) -> GetResult:
+        self.get_collection_by_id(collection_id, tenant, database)
         ids_amount = len(ids) if ids else 0
         self.product_telemetry_client.capture(
             CollectionGetEvent(
@@ -471,6 +478,7 @@ class RustBindingsAPI(ServerAPI):
         tenant: str = DEFAULT_TENANT,
         database: str = DEFAULT_DATABASE,
     ) -> bool:
+        self.get_collection_by_id(collection_id, tenant, database)
         self.product_telemetry_client.capture(
             CollectionAddEvent(
                 collection_uuid=str(collection_id),
@@ -504,6 +512,7 @@ class RustBindingsAPI(ServerAPI):
         tenant: str = DEFAULT_TENANT,
         database: str = DEFAULT_DATABASE,
     ) -> bool:
+        self.get_collection_by_id(collection_id, tenant, database)
         self.product_telemetry_client.capture(
             CollectionUpdateEvent(
                 collection_uuid=str(collection_id),
@@ -538,6 +547,7 @@ class RustBindingsAPI(ServerAPI):
         tenant: str = DEFAULT_TENANT,
         database: str = DEFAULT_DATABASE,
     ) -> bool:
+        self.get_collection_by_id(collection_id, tenant, database)
         return self.bindings.upsert(
             str(collection_id),
             ids,
@@ -562,6 +572,7 @@ class RustBindingsAPI(ServerAPI):
         tenant: str = DEFAULT_TENANT,
         database: str = DEFAULT_DATABASE,
     ) -> QueryResult:
+        self.get_collection_by_id(collection_id, tenant, database)
         query_amount = len(query_embeddings)
         filtered_ids_amount = len(ids) if ids else 0
         self.product_telemetry_client.capture(
@@ -613,6 +624,7 @@ class RustBindingsAPI(ServerAPI):
         tenant: str = DEFAULT_TENANT,
         database: str = DEFAULT_DATABASE,
     ) -> DeleteResult:
+        self.get_collection_by_id(collection_id, tenant, database)
         deleted = self.bindings.delete(
             str(collection_id),
             ids,

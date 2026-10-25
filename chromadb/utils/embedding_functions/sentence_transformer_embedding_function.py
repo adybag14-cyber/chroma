@@ -81,6 +81,24 @@ class SentenceTransformerEmbeddingFunction(EmbeddingFunction[Documents]):
         normalize_embeddings = config.get("normalize_embeddings")
         kwargs = config.get("kwargs", {})
 
+        # Persisted/server-provided configuration is data, not permission to
+        # execute a model repository's Python code. Check nested model,
+        # tokenizer, and config kwargs before importing or constructing it.
+        pending = [kwargs]
+        while pending:
+            value = pending.pop()
+            if isinstance(value, dict):
+                if (
+                    "trust_remote_code" in value
+                    and value["trust_remote_code"] is not False
+                ):
+                    raise ValueError(
+                        "Serialized configuration cannot enable trust_remote_code"
+                    )
+                pending.extend(value.values())
+            elif isinstance(value, (list, tuple)):
+                pending.extend(value)
+
         if model_name is None or device is None or normalize_embeddings is None:
             assert False, "This code should not be reached"
 

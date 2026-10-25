@@ -8,7 +8,7 @@ from chromadb.auth import (
     UserIdentity,
     ServerAuthorizationProvider,
 )
-from chromadb.config import System
+from chromadb.config import DEFAULT_DATABASE, DEFAULT_TENANT, System
 from fastapi import HTTPException
 
 from chromadb.telemetry.opentelemetry import (
@@ -37,9 +37,8 @@ class SimpleRBACAuthorizationProvider(ServerAuthorizationProvider):
         self._config = yaml.safe_load("\n".join(self.read_config_or_config_file()))
 
         # We favor preprocessing here to avoid having to parse the config file
-        # on every request. This AuthorizationProvider does not support
-        # per-resource authorization so we just map the user ID to the
-        # permissions they have. We're not worried about the size of this dict
+        # on every request. Actions are intersected with the authenticated
+        # identity's tenant/database grants below. We're not worried about this dict
         # since users are all specified in the file -- anyone with a gigantic
         # number of users can roll their own AuthorizationProvider.
         self._permissions: Dict[str, Set[str]] = {}
@@ -64,6 +63,23 @@ class SimpleRBACAuthorizationProvider(ServerAuthorizationProvider):
             and action in self._permissions[user.user_id]
         ):
             policy_decision = True
+
+        # Missing identity scope retains access to the default namespace,
+        # never every tenant. Only an explicit wildcard grants global access.
+        tenant = user.tenant or DEFAULT_TENANT
+        databases = user.databases if user.databases is not None else [DEFAULT_DATABASE]
+        if resource.tenant is not None and tenant not in ("*", resource.tenant):
+            policy_decision = False
+        if (
+            resource.database is not None
+            and "*" not in databases
+            and resource.database not in databases
+        ):
+            policy_decision = False
+        if resource.collection is not None and (
+            resource.tenant is None or resource.database is None
+        ):
+            policy_decision = False
 
         logger.debug(
             f"Authorization decision: Access "

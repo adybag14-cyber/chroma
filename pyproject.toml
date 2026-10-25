@@ -1,6 +1,6 @@
 [project]
 name = "chromadb"
-dynamic = ["version"]
+version = "1.5.9+agent.1"
 
 authors = [{ name = "Jeff Huber", email = "jeff@trychroma.com" }, { name = "Anton Troynikov", email = "anton@trychroma.com" }]
 description = "Chroma."
